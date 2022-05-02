@@ -1,32 +1,73 @@
 import "./GameScreen.css";
 
-const GameScreen = ({processGame}) => {
+import { useState, useRef } from "react";
+
+const GameScreen = ({
+    processGame,
+    pickedCategory,
+    pickedWord,
+    pickedLetters,
+    wrongLetters,
+    guessedLetters,
+    guesses,
+    score,
+  }) => {
+  
+  const [letter, setLetter] = useState("");
+  const inputRef = useRef(null);
+
+  const handleSubmit = (e) =>{
+    e.preventDefault();
+    processGame(letter);
+
+    setLetter("");
+    // Focus to input
+    inputRef.current.focus();
+  }
+
   return (
     <div className="gameScreenGame">
       <p className="gameScreenPoints">
-        <span>Points: 000</span>
+        <span>Points: {score}</span>
       </p>
       <h2>Guess the word</h2>
-      <div className="gameScreenLetterContainer">
-        <span className="gameScreenLetter">A</span>
-        <span className="gameScreenBlank" type="text" />
+      <div className="gameScreenWordContainer">
+        {pickedLetters.map((letter, l)=> (
+          guessedLetters.includes(letter) ? (
+            <span key={l} className="gameScreenLetter">{letter}</span>
+          ):(
+            <span key={l} className="gameScreenBlank" type="text"></span>
+          )
+        ))} 
       </div>
       <p className="gameScreenTip">
-        Tip: <span>something</span>
+        Tip: <span>{pickedCategory}</span>
       </p>
-      <div className="gameScreenWordContainer">
+      <p>
+        {guesses} chances remain 
+      </p>
+      <div className="gameScreenLetterContainer">
         <p>Put the letter:</p>
-        <form>
-          <input type="text" name="letter" maxLength="1" required />
+        <form onSubmit={handleSubmit}>
+          <input 
+            type="text" 
+            name="letter" 
+            maxLength="1" 
+            required 
+            onChange={e => setLetter(e.target.value)} 
+            value={letter}
+            // Focus
+            ref = {inputRef}
+            />
           <button>Guess</button>
         </form>
       </div>
       <div className="gameScreenTriedLetters">
         <p>Letters tried:</p>
-        <span>l, m, z</span>
+        {wrongLetters.map((letter, l) =>(
+          <span key={l}>{letter}, </span>
+        ))}
       </div>
-      
-      
     </div>
   )
 }

@@ -2,7 +2,7 @@
 import './App.css';
 
 // Hooks..., etc.
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Data
 import { Words } from "../src/data/Words";
@@ -26,7 +26,13 @@ function App() {
   const [pickedCategory, setPickedCategory] = useState("");
   const [pickedLetters, setPickedLetters] = useState([]);
 
-  const pickWordAndCategory = () =>{
+  const [guessedLetters, setGuessedLetters] = useState("");
+  const [wrongLetters, setWrongLetters] = useState([]);
+  const [guesses, setGuesses] = useState(3);
+  const [score, setScore] = useState(0);
+
+
+  const pickWordAndCategory = useCallback(() =>{
     // Pick a random category
     const categories = Object.keys(words);
     const randomCategory = categories[Math.floor(Math.random() * Object.keys(categories).length)];
@@ -41,10 +47,12 @@ function App() {
 
     // Return to startGame()
     return { randomCategory, randomWord, randomWordLetters };
-  }
+  },[words]);
 
   const startGame = () =>{
-
+    // Reset
+    setGuessedLetters([])
+    setWrongLetters([])
     // Get the data from pickWordAndCategory()
     const { randomCategory, randomWord, randomWordLetters } = pickWordAndCategory();
 
@@ -52,23 +60,73 @@ function App() {
     setPickedLetters(randomWordLetters);
     setPickedWord(randomWord);
     setPickedCategory(randomCategory);
-
+    
     setGameStage(stages[1].name);
+  };
+  const processGame = (letter) =>{
+    letter = letter.toLowerCase();
+    if (guessedLetters.includes(letter) ||
+        wrongLetters.includes(letter)
+      ){
+        return;
+      }
+    // Validation if its on or not
+    // It is on
+    if(pickedLetters.includes(letter)){
+      setGuessedLetters((newGuessedLetters)=>[
+        ...newGuessedLetters, letter, 
+      ]);
+    } 
+    // is not
+    else{
+      setWrongLetters((newWrongLetters)=>[
+        ...newWrongLetters, letter, 
+      ]);
 
-    console.log(randomCategory, randomWord, randomWordLetters);
+      setGuesses(guesses-1)
+    }
   }
-  const processGame = () =>{
-    setGameStage(stages[2].name);
-  }
+  useEffect(()=>{
+    if(guesses <= 0){
+      setGameStage(stages[2].name)
+
+      // Reset 
+      setGuessedLetters([])
+      setWrongLetters([])
+      setGuesses(3)
+    }
+  }, [guesses]);
+
+  useEffect(()=>{
+    const duplicateLetters = [...new Set(pickedLetters)];
+    
+    // Win
+    if((guessedLetters.length !== 0) && (guessedLetters.length === duplicateLetters.length)){
+      // Score
+      setScore(score+50);
+      startGame();
+    }
+  }, [guessedLetters]);
+
   const retryGame = () =>{
     setGameStage(stages[0].name);
   }
-
   return (
   <div className='app'>
     {gameStage === "start" && <StartScreen startGame={startGame} />}
-    {gameStage === "game" && <GameScreen processGame={processGame} />}
-    {gameStage === "end" && <EndScreen retryGame={retryGame} />}
+    {gameStage === "game" && 
+      <GameScreen 
+        processGame={processGame}
+        pickedCategory = {pickedCategory}
+        pickedWord = {pickedWord}
+        pickedLetters = {pickedLetters}
+        wrongLetters = {wrongLetters}
+        guessedLetters = {guessedLetters}
+        guesses = {guesses}
+        score = {score}
+        
+      />}
+    {gameStage === "end" && <EndScreen retryGame={retryGame} score={score}/>}
   </div>
   );
 }
